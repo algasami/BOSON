@@ -28,6 +28,9 @@ inline char getLuma(double const brightness) {
 
 struct Object3D {
     std::vector<Linalg::Triangle<double>> triangles;
+    Linalg::Mat<double, 4, 4> transform;
+    Linalg::Vec4<double> pos;
+    Linalg::Vec4<double> look;
 };
 
 std::vector<Object3D> g_objectList;
