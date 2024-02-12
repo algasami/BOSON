@@ -20,7 +20,7 @@ constexpr double NPZ = 1.0;
 std::string LUMA_INDEX =
     "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'.";
 
-Linalg::Vec3<double> g_sunlight = Linalg::Vec3<double>(-0.1, -0.2, 0.3).unit();
+Linalg::Vec4<double> g_sunlight = Linalg::Vec4<double>(-0.1, -0.2, 0.3).unit();
 
 inline char getLuma(double const brightness) {
     return LUMA_INDEX.at((LUMA_INDEX.length() - 1) * brightness);
@@ -32,8 +32,7 @@ struct Object3D {
 
 std::vector<Object3D> g_objectList;
 
-Linalg::Vec3<double> g_camera(0.0, 0.0,
-                              0.0); // TODO: support right, up, front vector
+Linalg::Vec4<double> g_camera(0.0, 0.0, 0.0);
 
 double sbuffer[SSHEIGHT][SSWIDTH];
 char dbuffer[HEIGHT][WIDTH];
@@ -48,12 +47,8 @@ int main() {
     std::cout.tie(nullptr);
 
     // testing
-    Linalg::Mat<double, 3> m0{
-        {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
-    Linalg::Mat<double, 3> m1{
-        {2.0, 0.0, 0.0}, {0.0, 2.0, 0.0}, {0.0, 0.0, 2.0}};
-    Linalg::Vec3<double> v{1, 2, 3};
-    std::cout << m0 * m1 << '\n';
+    Linalg::Vec4<double> v{1, 2, 3};
+    std::cout << Linalg::I4x4_double * 2.11 * v << '\n';
 
     initialize_objects();
 
@@ -64,7 +59,7 @@ int main() {
 void initialize_objects() // hard-coding
 {
 
-    Linalg::Vec3<double> a{0.0, 0.0, 1.3}, b{0.0, 1.0, 1.3}, c{1.0, 0.0, 1.3},
+    Linalg::Vec4<double> a{0.0, 0.0, 1.3}, b{0.0, 1.0, 1.3}, c{1.0, 0.0, 1.3},
         d{0.0, 0.0, 1.6};
     g_objectList.push_back(
         Object3D{// tetrahedron
@@ -85,19 +80,19 @@ void draw_loop() {
 void cast_rays() {
     for (uint32_t _i = 0; _i < SSHEIGHT; _i++) {
         for (uint32_t _j = 0; _j < SSWIDTH; _j++) {
-            Linalg::Vec3<double> _raw_ray = Linalg::Vec3<double>(
+            Linalg::Vec4<double> _raw_ray = Linalg::Vec4<double>(
                 (static_cast<double>(_j) / static_cast<double>(SSWIDTH) - 0.5) *
                     2.0,
                 (0.5 -
                  static_cast<double>(_i) / static_cast<double>(SSHEIGHT)) *
                     2.0,
                 NPZ);
-            Linalg::Vec3<double> ray_step = _raw_ray.unit() * DIST_PER_STEP;
+            Linalg::Vec4<double> ray_step = _raw_ray.unit() * DIST_PER_STEP;
 
-            Linalg::Vec3<double> pos = g_camera + _raw_ray;
+            Linalg::Vec4<double> pos = g_camera + _raw_ray;
 
             bool hit = false;
-            Linalg::Vec3<double> unitNormal;
+            Linalg::Vec4<double> unitNormal;
             uint32_t steps = 0;
             while (steps++ < MAX_STEP && !hit) {
                 for (const auto &obj : g_objectList) {
