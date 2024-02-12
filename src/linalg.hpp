@@ -2,42 +2,51 @@
 #define LINALG_HPP
 
 #include "utils.hpp"
+#include <cassert>
 #include <cmath>
 #include <iostream>
 namespace Linalg {
 
 template <typename T> struct Vec3 {
-    T x, y, z;
+    T data[3];
 
-    Vec3(T x, T y, T z) : x(x), y(y), z(z) {}
+    Vec3(T const &x, T const &y, T const &z) {
+        data[0] = x;
+        data[1] = y;
+        data[2] = z;
+    }
     Vec3(Vec3 const &copy) {
-        x = copy.x;
-        y = copy.y;
-        z = copy.z;
+        for (uint32_t i = 0; i < 3; i++)
+            data[i] = copy.data[i];
     }
     Vec3() {
-        x = static_cast<T>(0);
-        y = static_cast<T>(0);
-        z = static_cast<T>(0);
+        data[0] = 0;
+        data[1] = 0;
+        data[2] = 0;
     }
 
     friend Vec3 operator+(Vec3 const &a, Vec3 const &b) {
-        return Vec3(a.x + b.x, a.y + b.y, a.z + b.z);
+        return Vec3(a.data[0] + b.data[0], a.data[1] + b.data[1],
+                    a.data[2] + b.data[2]);
     }
     friend Vec3 operator-(Vec3 const &a, Vec3 const &b) {
-        return Vec3(a.x - b.x, a.y - b.y, a.z - b.z);
+        return Vec3(a.data[0] - b.data[0], a.data[1] - b.data[1],
+                    a.data[2] - b.data[2]);
     }
     friend Vec3 operator/(Vec3 const &a, T const &b) {
-        return Vec3(a.x / b, a.y / b, a.z / b);
+        return Vec3(a.data[0] / b, a.data[1] / b, a.data[2] / b);
     }
     friend Vec3 operator*(Vec3 const &a, T const &b) {
-        return Vec3(a.x * b, a.y * b, a.z * b);
+        return Vec3(a.data[0] * b, a.data[1] * b, a.data[2] * b);
     }
     friend std::ostream &operator<<(std::ostream &stream, Vec3 const &v) {
-        return stream << '(' << v.x << ',' << v.y << ',' << v.z << ')';
+        return stream << '(' << v.data[0] << ',' << v.data[1] << ','
+                      << v.data[2] << ')';
     }
 
-    T getMag() const { return sqrt(x * x + y * y + z * z); }
+    T getMag() const {
+        return sqrt(data[0] * data[0] + data[1] * data[1] + data[2] * data[2]);
+    }
 
     Vec3 unit() const { return *this / getMag(); }
 
@@ -47,17 +56,17 @@ template <typename T> struct Vec3 {
 
     // static functions
     static inline T Dot(Vec3 const &a, Vec3 const &b) {
-        return a.x * b.x + a.y * b.y + a.z * b.z;
+        return a.data[0] * b.data[0] + a.data[1] * b.data[1] +
+               a.data[2] * b.data[2];
     }
     static inline Vec3 Cross(Vec3 const &a, Vec3 const &b) {
-        return Vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z,
-                    a.x * b.y - a.y * b.x);
+        return Vec3(a.data[1] * b.data[2] - a.data[2] * b.data[1],
+                    a.data[2] * b.data[0] - a.data[0] * b.data[2],
+                    a.data[0] * b.data[1] - a.data[1] * b.data[0]);
     }
 };
 
-template <typename T> class Triangle {
-    // un.x * x + un.y * y + un.z * z = rhs
-  public:
+template <typename T> struct Triangle {
     Vec3<T> unit_normal;
     T rhs;
     Vec3<T> const p0, p1, p2;
@@ -82,6 +91,81 @@ template <typename T> class Triangle {
         n2 = n2.unit();
         n3 = n3.unit();
         return n1.dot(n2) > 1.0 - 0.1 && n2.dot(n3) > 1.0 - 0.1;
+    }
+};
+
+/**
+ * Matrix SxS
+ */
+template <typename T, unsigned int S> struct Mat {
+    T data[S][S] = {};
+    Mat() {}
+    Mat(std::initializer_list<std::initializer_list<T>> d) {
+        assert(d.size() == S);
+        assert(d.begin()->size() == S);
+        uint32_t i = 0, j = 0;
+        for (std::initializer_list<T> const &dp : d) {
+            j = 0;
+            for (T const &v : dp) {
+                data[i][j] = v;
+                j++;
+            }
+            i++;
+        }
+    }
+
+    Mat(Mat<T, S> const &copy) {
+        for (uint32_t i = 0; i < S; i++) {
+            for (uint32_t j = 0; j < S; j++)
+                data[i][j] = copy.data[i][j];
+        }
+    }
+
+    friend std::ostream &operator<<(std::ostream &os, Mat const &ref) {
+        for (uint32_t i = 0; i < S; i++) {
+            os << '|';
+            for (uint32_t j = 0; j < S; j++)
+                os << ref.data[i][j] << '\t';
+            os << "|\n";
+        }
+        return os;
+    }
+
+    /**
+     * Something like this:
+     * | 1 2 3 |    | 10 |
+     * | 4 5 6 | *  | 11 |
+     * | 7 8 9 |    | 12 |
+     */
+    friend Vec3<T> operator*(Mat<T, S> const &m, Vec3<T> const &v) {
+        static_assert(S >= 3, "Matrix is smaller than 3x3!");
+        Vec3<T> dst = {};
+        for (uint32_t r = 0; r < 3; r++)
+            for (uint32_t c = 0; c < 3; c++)
+                dst.data[r] += m.data[r][c] * v.data[c];
+        return dst;
+    }
+    /**
+     * | 1 2 3 |    | 1 2 3 |
+     * | 4 5 6 | *  | 1 2 3 |
+     * | 7 8 9 |    | 1 2 3 |
+     */
+    friend Mat<T, S> operator*(Mat<T, S> const &m0, Mat<T, S> const &m1) {
+        Mat<T, S> dst;
+        for (uint32_t r = 0; r < S; r++)
+            for (uint32_t c = 0; c < S; c++)
+                for (uint32_t k = 0; k < S; k++) {
+                    dst.data[r][c] += m0.data[r][k] * m1.data[k][c];
+                }
+        return dst;
+    }
+
+    template <unsigned int S2> Mat<T, S2> toMat() {
+        Mat<T, S2> dst;
+        for (uint32_t i = 0; i < std::min(S, S2); i++)
+            for (uint32_t j = 0; j < std::min(S, S2); j++)
+                dst[i][j] = data[i][j];
+        return dst;
     }
 };
 

@@ -47,9 +47,17 @@ int main() {
     std::cin.tie(nullptr);
     std::cout.tie(nullptr);
 
+    // testing
+    Linalg::Mat<double, 3> m0{
+        {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+    Linalg::Mat<double, 3> m1{
+        {2.0, 0.0, 0.0}, {0.0, 2.0, 0.0}, {0.0, 0.0, 2.0}};
+    Linalg::Vec3<double> v{1, 2, 3};
+    std::cout << m0 * m1 << '\n';
+
     initialize_objects();
 
-    draw_loop();
+    // draw_loop();
     return 0;
 }
 
