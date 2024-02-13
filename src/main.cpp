@@ -1,7 +1,9 @@
 #include "linalg.hpp"
+#include "utils.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
+
 
 constexpr uint32_t WIDTH = 80;
 constexpr uint32_t HEIGHT = 50;
