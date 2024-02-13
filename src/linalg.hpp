@@ -68,17 +68,18 @@ template <typename T> struct Vec4 {
     }
 };
 
+template <typename T, unsigned int S, unsigned int S1> struct Mat;
 template <typename T> struct Triangle {
     Vec4<T> unit_normal;
-    T rhs;
     Vec4<T> const p0, p1, p2;
     Triangle(Vec4<T> const &a, Vec4<T> const &b, Vec4<T> const &c)
         : p0(a), p1(b), p2(c) {
         unit_normal = (b - a).cross(c - a).unit();
-        rhs = unit_normal.dot(a);
     }
-    T getDist(Vec4<T> const &pos) const {
-        return abs_generic(unit_normal.dot(pos) - rhs);
+
+    // TODO: EXPENSIVE!!! NEED 2 FIX
+    Triangle<T> applyMat(Mat<T, 4, 4> const &Mat4x4) const {
+        return Triangle<T>(Mat4x4 * p0, Mat4x4 * p1, Mat4x4 * p2);
     }
 
     T checkInside(Vec4<T> const &p) const {
@@ -176,6 +177,24 @@ template <typename T, unsigned int S, unsigned int S1> struct Mat {
 
 Mat<double, 4, 4> I4x4_double{
     {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+inline Mat<double, 4, 4> getRx(double rad) {
+    return Mat<double, 4, 4>{{1.0, 0.0, 0.0, 0.0},
+                             {0.0, cos(rad), -sin(rad), 0.0},
+                             {0.0, sin(rad), cos(rad), 0.0},
+                             {0.0, 0.0, 0.0, 1.0}};
+}
+inline Mat<double, 4, 4> getRy(double rad) {
+    return Mat<double, 4, 4>{{cos(rad), 0.0, sin(rad), 0.0},
+                             {0.0, 1.0, 0.0, 0.0},
+                             {-sin(rad), 0.0, cos(rad), 0.0},
+                             {0.0, 0.0, 0.0, 1.0}};
+}
+inline Mat<double, 4, 4> getRz(double rad) {
+    return Mat<double, 4, 4>{{cos(rad), -sin(rad), 0.0, 0.0},
+                             {sin(rad), cos(rad), 0.0, 0.0},
+                             {0.0, 0.0, 1.0, 0.0},
+                             {0.0, 0.0, 0.0, 1.0}};
+}
 
 } // namespace Linalg
 

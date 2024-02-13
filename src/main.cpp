@@ -4,13 +4,12 @@
 #include <string>
 #include <vector>
 
-
-constexpr uint32_t WIDTH = 80;
+constexpr uint32_t WIDTH = 100;
 constexpr uint32_t HEIGHT = 50;
 constexpr uint32_t SAMPLING_FACTOR = 1;
 
-constexpr double MAX_STEP_DIST = 3.0;
-constexpr double DIST_PER_STEP = 0.05;
+constexpr double MAX_STEP_DIST = 2.0;
+constexpr double DIST_PER_STEP = 0.1;
 
 constexpr uint32_t MAX_STEP =
     static_cast<uint32_t>(MAX_STEP_DIST / DIST_PER_STEP);
@@ -30,17 +29,14 @@ inline char getLuma(double const brightness) {
 
 struct Object3D {
     std::vector<Linalg::Triangle<double>> triangles;
-    Linalg::Mat<double, 4, 4> transform;
-    Linalg::Vec4<double> pos;
-    Linalg::Vec4<double> look;
+    Linalg::Mat<double, 4, 4> transform_mat = Linalg::I4x4_double;
 };
 
 std::vector<Object3D> g_objectList;
 
-Linalg::Vec4<double> g_camera(0.0, 0.0, 0.0);
+Linalg::Mat<double, 4, 4> g_view_mat = Linalg::I4x4_double;
 
 double sbuffer[SSHEIGHT][SSWIDTH];
-char dbuffer[HEIGHT][WIDTH];
 
 void initialize_objects();
 void draw_loop();
@@ -51,31 +47,37 @@ int main() {
     std::cin.tie(nullptr);
     std::cout.tie(nullptr);
 
-    // testing
-    Linalg::Vec4<double> v{1, 2, 3};
-    std::cout << Linalg::I4x4_double * 2.11 * v << '\n';
-
     initialize_objects();
 
-    // draw_loop();
+    draw_loop();
     return 0;
 }
 
 void initialize_objects() // hard-coding
 {
 
-    Linalg::Vec4<double> a{0.0, 0.0, 1.3}, b{0.0, 1.0, 1.3}, c{1.0, 0.0, 1.3},
-        d{0.0, 0.0, 1.6};
-    g_objectList.push_back(
-        Object3D{// tetrahedron
-                 .triangles = {{a, b, c}, {b, c, d}, {a, c, d}, {a, b, d}}});
+    Linalg::Vec4<double> a{0.0, 0.0, 0.0}, b{0.0, 1.0, 0.0}, c{1.0, 0.0, 0.0},
+        d{0.0, 0.0, 1.0};
+    g_objectList.push_back(Object3D{
+        // tetrahedron
+        .triangles = {{a, b, c}, {b, c, d}, {a, c, d}, {a, b, d}},
+        .transform_mat = Linalg::Mat<double, 4, 4>{{{1.0, 0.0, 0.0, 0.0},
+                                                    {0.0, 1.0, 0.0, 0.0},
+                                                    {0.0, 0.0, 1.0, 2.0},
+                                                    {0.0, 0.0, 0.0, 1.0}}}});
 }
 
 void draw_loop() {
     double t = 0.0;
     while (1) {
-        t += 0.1;
-        g_camera = {0.0, 0.0, 0.1 * (sin(t) + 1.0)};
+        t += 0.01;
+        g_view_mat = Linalg::Mat<double, 4, 4>{{1.0, 0.0, 0.0, 0.0},
+                                               {0.0, 1.0, 0.0, 0.0},
+                                               {0.0, 0.0, 1.0, 0.0},
+                                               {0.0, 0.0, 0.0, 1.0}};
+        g_objectList.at(0).transform_mat = g_objectList.at(0).transform_mat *
+                                           Linalg::getRx(8.0 * 3.14 / 180.0) *
+                                           Linalg::getRy(8.0 * 3.14 / 180.0);
         cast_rays();
         display();
         std::cout.flush();
@@ -94,7 +96,7 @@ void cast_rays() {
                 NPZ);
             Linalg::Vec4<double> ray_step = _raw_ray.unit() * DIST_PER_STEP;
 
-            Linalg::Vec4<double> pos = g_camera + _raw_ray;
+            Linalg::Vec4<double> pos = _raw_ray;
 
             bool hit = false;
             Linalg::Vec4<double> unitNormal;
@@ -102,10 +104,11 @@ void cast_rays() {
             while (steps++ < MAX_STEP && !hit) {
                 for (const auto &obj : g_objectList) {
                     for (const auto &tri : obj.triangles) {
-                        double dist = tri.getDist(pos);
-                        if (tri.checkInside(pos)) {
+                        const auto applied = tri.applyMat(obj.transform_mat)
+                                                 .applyMat(g_view_mat);
+                        if (applied.checkInside(pos)) {
                             hit = true;
-                            unitNormal = tri.unit_normal;
+                            unitNormal = applied.unit_normal;
                             break;
                         }
                     }
@@ -115,9 +118,10 @@ void cast_rays() {
                 pos = pos + ray_step;
             }
             if (hit) {
-                sbuffer[_i][_j] = abs_generic(unitNormal.dot(g_sunlight));
+                sbuffer[_i][_j] = abs_generic(
+                    unitNormal.dot((g_view_mat * g_sunlight).unit()));
             } else {
-                sbuffer[_i][_j] = -0.001;
+                sbuffer[_i][_j] = 0.0;
             }
         }
     }
@@ -126,23 +130,24 @@ void cast_rays() {
 inline void display() {
     for (uint32_t i = 0; i < HEIGHT; i++) {
         for (uint32_t j = 0; j < WIDTH; j++) {
+            double brightness = 0.0;
+#if SAMPLING_FACTOR > 1
             uint32_t sh = i * SAMPLING_FACTOR;
             uint32_t sw = j * SAMPLING_FACTOR;
 
             uint32_t count = 0;
-            double brightness = 0.0;
             for (uint32_t si = sh; si < sh + SAMPLING_FACTOR; si++)
                 for (uint32_t sj = sw; sj < sw + SAMPLING_FACTOR;
                      sj++, count++) {
                     brightness += sbuffer[si][sj];
                 }
-            if (brightness < 0.0) {
-                dbuffer[i][j] = ' ';
-            } else {
-                dbuffer[i][j] =
-                    getLuma(brightness / static_cast<double>(count));
-            }
-            std::cout << dbuffer[i][j];
+            brightness /= static_cast<double>(count);
+#else
+            brightness = sbuffer[i][j];
+#endif
+            if (brightness < 0.0)
+                brightness = 0.0;
+            std::cout << getLuma(brightness);
         }
         std::cout << '\n';
     }
