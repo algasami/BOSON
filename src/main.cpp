@@ -101,7 +101,7 @@ void cast_rays() {
                                                  .applyMat(g_view_mat);
                         if (applied.checkInside(pos)) {
                             hit = true;
-                            unitNormal = applied.unit_normal;
+                            unitNormal = applied.getUnitNormal();
                             break;
                         }
                     }

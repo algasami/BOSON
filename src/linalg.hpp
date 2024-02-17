@@ -70,12 +70,11 @@ template <typename T> struct Vec4 {
 
 template <typename T, unsigned int S, unsigned int S1> struct Mat;
 template <typename T> struct Triangle {
-    Vec4<T> unit_normal;
     Vec4<T> const p0, p1, p2;
     Triangle(Vec4<T> const &a, Vec4<T> const &b, Vec4<T> const &c)
-        : p0(a), p1(b), p2(c) {
-        unit_normal = (b - a).cross(c - a).unit();
-    }
+        : p0(a), p1(b), p2(c) {}
+
+    Vec4<T> getUnitNormal() const { return (p1 - p0).cross(p2 - p0).unit(); }
 
     // TODO: EXPENSIVE!!! NEED 2 FIX
     Triangle<T> applyMat(Mat<T, 4, 4> const &Mat4x4) const {
