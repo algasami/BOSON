@@ -131,7 +131,9 @@ inline void display() {
     for (uint32_t i = 0; i < HEIGHT; i++) {
         for (uint32_t j = 0; j < WIDTH; j++) {
             double brightness = 0.0;
-#if SAMPLING_FACTOR > 1
+
+#if SAMPLING_FACTOR - 1U
+            // TODO: UGLY FIX ^^^
             uint32_t sh = i * SAMPLING_FACTOR;
             uint32_t sw = j * SAMPLING_FACTOR;
 
