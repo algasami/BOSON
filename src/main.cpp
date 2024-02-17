@@ -18,14 +18,7 @@ constexpr uint32_t SSHEIGHT = HEIGHT * SAMPLING_FACTOR;
 
 constexpr double NPZ = 1.0;
 
-std::string LUMA_INDEX =
-    "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'.";
-
 Linalg::Vec4<double> g_sunlight = Linalg::Vec4<double>(-0.1, -0.2, 0.3).unit();
-
-inline char getLuma(double const brightness) {
-    return LUMA_INDEX.at((LUMA_INDEX.length() - 1) * brightness);
-}
 
 struct Object3D {
     std::vector<Linalg::Triangle<double>> triangles;
