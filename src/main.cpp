@@ -65,15 +65,14 @@ void initialize_objects() // hard-coding
 
 void draw_loop() {
     double t = 0.0;
+    g_view_mat = Linalg::Mat<double, 4, 4>{{1.0, 0.0, 0.0, 0.0},
+                                           {0.0, 1.0, 0.0, 0.0},
+                                           {0.0, 0.0, 1.0, 0.0},
+                                           {0.0, 0.0, 0.0, 1.0}};
     while (1) {
         t += 0.01;
-        g_view_mat = Linalg::Mat<double, 4, 4>{{1.0, 0.0, 0.0, 0.0},
-                                               {0.0, 1.0, 0.0, 0.0},
-                                               {0.0, 0.0, 1.0, 0.0},
-                                               {0.0, 0.0, 0.0, 1.0}};
         g_objectList.at(0).transform_mat = g_objectList.at(0).transform_mat *
-                                           Linalg::getRx(8.0 * 3.14 / 180.0) *
-                                           Linalg::getRy(8.0 * 3.14 / 180.0);
+                                           Linalg::getRz(8.0 * 3.14 / 180.0);
         cast_rays();
         display();
         std::cout.flush();
