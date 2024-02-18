@@ -69,32 +69,31 @@ template <typename T> struct Vec4 {
 };
 
 template <typename T, unsigned int S, unsigned int S1> struct Mat;
-template <typename T> struct Triangle {
-    Vec4<T> const p0, p1, p2;
-    Triangle(Vec4<T> const &a, Vec4<T> const &b, Vec4<T> const &c)
-        : p0(a), p1(b), p2(c) {}
 
-    Vec4<T> getUnitNormal() const { return (p1 - p0).cross(p2 - p0).unit(); }
+template <typename T>
+inline Vec4<T> getUnitNormal(Vec4<T> const &p0, Vec4<T> const &p1,
+                             Vec4<T> const &p2) {
+    return (p1 - p0).cross(p2 - p0).unit();
+}
 
-    // TODO: EXPENSIVE!!! NEED 2 FIX
-    Triangle<T> applyMat(Mat<T, 4, 4> const &Mat4x4) const {
-        return Triangle<T>(Mat4x4 * p0, Mat4x4 * p1, Mat4x4 * p2);
-    }
-
-    T checkInside(Vec4<T> const &p) const {
-        Vec4<T> n1 = (p0 - p).cross(p1 - p);
-        Vec4<T> n2 = (p1 - p).cross(p2 - p);
-        Vec4<T> n3 = (p2 - p).cross(p0 - p);
-        if (n1.getMag() == static_cast<T>(0) ||
-            n2.getMag() == static_cast<T>(0) ||
-            n3.getMag() == static_cast<T>(0))
-            return true;
-        n1 = n1.unit();
-        n2 = n2.unit();
-        n3 = n3.unit();
-        return n1.dot(n2) > 1.0 - 0.1 && n2.dot(n3) > 1.0 - 0.1;
-    }
-};
+template <typename T>
+inline Vec4<T> applyMat(Vec4<T> const &vec, Mat<T, 4, 4> const &Mat4x4) {
+    return Mat4x4 * vec;
+}
+template <typename T>
+bool checkInside(Vec4<T> const &p0, Vec4<T> const &p1, Vec4<T> const &p2,
+                 Vec4<T> const &p) {
+    Vec4<T> n1 = (p0 - p).cross(p1 - p);
+    Vec4<T> n2 = (p1 - p).cross(p2 - p);
+    Vec4<T> n3 = (p2 - p).cross(p0 - p);
+    if (n1.getMag() == static_cast<T>(0) || n2.getMag() == static_cast<T>(0) ||
+        n3.getMag() == static_cast<T>(0))
+        return true;
+    n1 = n1.unit();
+    n2 = n2.unit();
+    n3 = n3.unit();
+    return n1.dot(n2) > 1.0 - 0.1 && n2.dot(n3) > 1.0 - 0.1;
+}
 
 /**
  * Matrix SxS

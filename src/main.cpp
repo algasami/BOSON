@@ -7,6 +7,7 @@
 constexpr uint32_t WIDTH = 100;
 constexpr uint32_t HEIGHT = 50;
 constexpr uint32_t SAMPLING_FACTOR = 1;
+constexpr uint32_t MAX_VERTICES = 1000;
 
 constexpr double MAX_STEP_DIST = 2.0;
 constexpr double DIST_PER_STEP = 0.1;
@@ -21,7 +22,7 @@ constexpr double NPZ = 1.0;
 Linalg::Vec4<double> g_sunlight = Linalg::Vec4<double>(-0.1, -0.2, 0.3).unit();
 
 struct Object3D {
-    std::vector<Linalg::Triangle<double>> triangles;
+    std::vector<std::vector<size_t>> triangles;
     Linalg::Mat<double, 4, 4> transform_mat = Linalg::I4x4_double;
 };
 
@@ -29,6 +30,7 @@ std::vector<Object3D> g_objectList;
 
 Linalg::Mat<double, 4, 4> g_view_mat = Linalg::I4x4_double;
 
+Linalg::Vec4<double> ibuffer[MAX_VERTICES];
 double sbuffer[SSHEIGHT][SSWIDTH];
 
 void initialize_objects();
@@ -48,12 +50,13 @@ int main() {
 
 void initialize_objects() // hard-coding
 {
-
-    Linalg::Vec4<double> a{0.0, 0.0, 0.0}, b{0.0, 1.0, 0.0}, c{1.0, 0.0, 0.0},
-        d{0.0, 0.0, 1.0};
+    ibuffer[0] = {0.0, 0.0, 0.0};
+    ibuffer[1] = {0.0, 1.0, 0.0};
+    ibuffer[2] = {0.0, 0.0, 1.0};
+    ibuffer[3] = {1.0, 0.0, 0.0};
     g_objectList.push_back(Object3D{
         // tetrahedron
-        .triangles = {{a, b, c}, {b, c, d}, {a, c, d}, {a, b, d}},
+        .triangles = {{0, 1, 2}, {1, 2, 3}, {0, 2, 3}, {0, 1, 3}},
         .transform_mat = Linalg::Mat<double, 4, 4>{{{1.0, 0.0, 0.0, 0.0},
                                                     {0.0, 1.0, 0.0, 0.0},
                                                     {0.0, 0.0, 1.0, 2.0},
@@ -97,11 +100,21 @@ void cast_rays() {
             while (steps++ < MAX_STEP && !hit) {
                 for (const auto &obj : g_objectList) {
                     for (const auto &tri : obj.triangles) {
-                        const auto applied = tri.applyMat(obj.transform_mat)
-                                                 .applyMat(g_view_mat);
-                        if (applied.checkInside(pos)) {
+                        Linalg::Vec4<double> const &p0 = Linalg::applyMat(
+                            Linalg::applyMat(ibuffer[tri.at(0)],
+                                             obj.transform_mat),
+                            g_view_mat);
+                        Linalg::Vec4<double> const &p1 = Linalg::applyMat(
+                            Linalg::applyMat(ibuffer[tri.at(1)],
+                                             obj.transform_mat),
+                            g_view_mat);
+                        Linalg::Vec4<double> const &p2 = Linalg::applyMat(
+                            Linalg::applyMat(ibuffer[tri.at(2)],
+                                             obj.transform_mat),
+                            g_view_mat);
+                        if (Linalg::checkInside(p0, p1, p2, pos)) {
                             hit = true;
-                            unitNormal = applied.getUnitNormal();
+                            unitNormal = Linalg::getUnitNormal(p0, p1, p2);
                             break;
                         }
                     }
