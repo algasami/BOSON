@@ -8,11 +8,15 @@ find_package(Curses REQUIRED)
 
 set(sources
   src/main.cpp
+  src/linalg.cpp
+  src/engine.cpp
 )
 
 set(headers
+  src/engine.hpp
   src/linalg.hpp
   src/utils.hpp
+  src/sysio.hpp
 )
 
 add_executable(executable ${sources} ${headers})

@@ -4,11 +4,10 @@
 #include <cmath>
 #include <iostream>
 namespace Linalg {
-
 template <typename T> struct Vec4 {
     T data[4];
 
-    Vec4(T const &x, T const &y, T const &z) {
+    Vec4(T x, T y, T z) {
         data[0] = x;
         data[1] = y;
         data[2] = z;
@@ -171,8 +170,7 @@ template <typename T, unsigned int S, unsigned int S1> struct Mat {
     }
 };
 
-Mat<double, 4, 4> I4x4_double{
-    {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+extern Mat<double, 4, 4> I4x4_double;
 inline Mat<double, 4, 4> getRx(double rad) {
     return Mat<double, 4, 4>{{1.0, 0.0, 0.0, 0.0},
                              {0.0, cos(rad), -sin(rad), 0.0},
