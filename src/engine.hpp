@@ -62,8 +62,8 @@ void draw_loop() {
     while (1) {
         t += 0.01;
         g_objectList.at(0).transform_mat = g_objectList.at(0).transform_mat *
-                                           Linalg::getRx(8.0 * 3.14 / 180.0) *
-                                           Linalg::getRy(8.0 * 3.14 / 180.0);
+                                           Linalg::getRx(4.0 * 3.14 / 180.0) *
+                                           Linalg::getRy(4.0 * 3.14 / 180.0);
         cast_rays();
         display();
         std::cout.flush();
