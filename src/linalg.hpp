@@ -1,6 +1,4 @@
-#ifndef LINALG_HPP
-#define LINALG_HPP
-
+#pragma once
 #include "utils.hpp"
 #include <cassert>
 #include <cmath>
@@ -195,5 +193,3 @@ inline Mat<double, 4, 4> getRz(double rad) {
 }
 
 } // namespace Linalg
-
-#endif
